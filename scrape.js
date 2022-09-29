@@ -10,7 +10,7 @@ const parseHtml = (url) => {
 
 // input url string
 // outputs array of objects
-const getBlogDetails = (url, blogs = []) => {
+const getBlogPage = (url, blogs = []) => {
   return parseHtml(url).then($ => { // $ variable is to align syntax with jquery (which cheerio package replicates)
     $('div.article').each((i, article) => {
       blogs.push({
@@ -23,6 +23,19 @@ const getBlogDetails = (url, blogs = []) => {
     return blogs;
   })
 };
+
+// accepts string input for tag, looks for max 10 pages
+const getBlogs = (tag, arr = []) => {
+  for (let i=1; i < 11; i++) {
+    arr.push(getBlogPage(`https://blog.pythian.com/tag/${tag}/page/${i}`)
+      .catch(() => null ));
+  }
+  return Promise.allSettled(arr).then(res => {
+    let result = [];
+    res.forEach(({value}) => value ? result.push(value) : null)
+    return result.flat();
+  });
+}
 
 // accepts any array of objects
 const createCSV = (data) => {
@@ -43,5 +56,5 @@ const createCSV = (data) => {
   });
 };
 
-getBlogDetails('https://blog.pythian.com/tag/mongodb/')
+getBlogs('cassandra')
   .then(blogs => createCSV(blogs));
