@@ -10,11 +10,12 @@ const parseHtml = (url) => {
 
 // input url string
 // outputs array of objects
-const getBlogPage = (url, blogs = []) => {
+const getBlogPage = (url, tag, blogs = []) => {
   return parseHtml(url).then($ => { // $ variable is to align syntax with jquery (which cheerio package replicates)
     $('div.article').each((i, article) => {
       blogs.push({
         title: $(article).find('h3').text().replaceAll(',', ''),
+        tag: tag,
         url: $(article).find('a.article-title').prop('href'),
         author: $(article).find('div.article-meta').find('a').text(),
         date: date.transform($(article).find('div.date').text(), 'MMMM D, YYYY', 'M/D/YYYY'),
@@ -27,7 +28,7 @@ const getBlogPage = (url, blogs = []) => {
 // accepts string input for tag, looks for max 10 pages
 const getBlogs = (tag, arr = []) => {
   for (let i=1; i < 11; i++) {
-    arr.push(getBlogPage(`https://blog.pythian.com/tag/${tag}/page/${i}`)
+    arr.push(getBlogPage(`https://blog.pythian.com/tag/${tag}/page/${i}`, tag)
       .catch(() => null ));
   }
   return Promise.allSettled(arr).then(res => {
@@ -56,5 +57,5 @@ const createCSV = (data) => {
   });
 };
 
-getBlogs('cassandra')
-  .then(blogs => createCSV(blogs));
+Promise.all([getBlogs('cassandra'),getBlogs('apache-cassandra'),getBlogs('mongodb'),getBlogs('mysql')])
+  .then(blogs => createCSV(blogs.flat()));
